@@ -89,7 +89,7 @@ repositories are reported loudly (`error: empty repository`), not dropped.
 {
   "schema_version": 1,
   "generated_at": "2026-11-16T12:00:00Z",
-  "roots": ["/home/dev/Projects"],
+  "roots": ["/home/dev/projects"],
   "summary": {
     "repos": 34,
     "with_upstream": 33,
@@ -102,7 +102,7 @@ repositories are reported loudly (`error: empty repository`), not dropped.
   "repos": [
     {
       "name": "demo-beta",
-      "path": "/home/dev/Projects/demo-beta",
+      "path": "/home/dev/projects/demo-beta",
       "branch": "main",
       "bare": false,
       "upstream": "origin/main",
