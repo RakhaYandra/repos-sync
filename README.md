@@ -29,6 +29,15 @@ It is **read-only**: no `fetch`, no `gc`, no locks, no writes. It runs
 `git status --porcelain` with `GIT_OPTIONAL_LOCKS=0`, so it does not even
 refresh the index. It never touches the network.
 
+## How it works
+
+Direct children of each root that are git repositories are inspected with a
+handful of `exec.Command("git", ...)` calls — never a shell string — under
+`GIT_OPTIONAL_LOCKS=0`: `rev-parse`, `symbolic-ref`, `rev-list`,
+`status --porcelain`, `log -1`. Repositories that fail to load are reported
+with a per-repo `error` and do not abort the scan. Bare repositories are
+supported (reported as one entry).
+
 ## Requirements
 
 - Linux
@@ -54,6 +63,21 @@ repos-sync --json               # machine output
 repos-sync check .              # inspect one repository
 repos-sync check ~/Projects/demo-alpha
 ```
+
+## Commands
+
+| Command | Effect |
+|---|---|
+| `repos-sync` | Scan all roots (default `~/Projects`), table + one-line summary |
+| `repos-sync --root DIR` | Root to scan (repeatable; replaces the default) |
+| `repos-sync --json` | JSON envelope (`schema_version: 1`) |
+| `repos-sync check [PATH]` | Inspect one repository (default `.`) |
+| `repos-sync --help` / `--version` | Help / version |
+
+Kolom tabel: `repo` (basename), `branch` (atau `(detached <sha>)`), `↑`/`↓`
+(ahead/behind vs upstream), `status` — `clean` · `dirty N` · `ahead N` ·
+`behind N` · `untracked N` · `no upstream` · `error: <reason>`.
+
 
 A bare repository passed as `--root` is reported as a single entry. Roots are
 scanned at depth 1; repositories in subfolders are not discovered. Empty
