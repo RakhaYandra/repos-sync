@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -17,8 +19,9 @@ func NewRootCmd() *cobra.Command {
 	var roots []string
 	var asJSON bool
 	root := &cobra.Command{
-		Use:   "repos-sync",
-		Short: "One answer to: which of my repositories need attention right now.",
+		Version: Version,
+		Use:     "repos-sync",
+		Short:   "One answer to: which of my repositories need attention right now.",
 		Long: `repos-sync scans the direct children of its roots for git repositories and
 reports branch, upstream sync state, dirty changes and untracked files.
 
@@ -34,6 +37,7 @@ No network access.`,
 				}
 				roots = []string{home + "/Projects"}
 			}
+			roots = dedupeRoots(roots)
 			report, err := scan.ScanRoots(roots)
 			if err != nil {
 				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "repos-sync:", err)
@@ -86,9 +90,22 @@ func isTTY(w io.Writer) bool {
 	if !ok {
 		return false
 	}
-	fi, err := f.Stat()
-	if err != nil {
+	if _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), syscall.TCGETS, 0); errno != 0 {
 		return false
 	}
-	return fi.Mode()&os.ModeCharDevice != 0
+	return true
+}
+
+func dedupeRoots(in []string) []string {
+	seen := map[string]struct{}{}
+	out := []string{}
+	for _, r := range in {
+		r = filepath.Clean(r)
+		if _, ok := seen[r]; ok {
+			continue
+		}
+		seen[r] = struct{}{}
+		out = append(out, r)
+	}
+	return out
 }
